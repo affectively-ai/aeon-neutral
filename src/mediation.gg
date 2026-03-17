@@ -1,0 +1,95 @@
+// mediation.gg -- Neutral Mediation via Joint Void Surface
+//
+// Two metacognitive walkers rolling around on their own void surfaces.
+// The mediator reads both surfaces, computes the joint complement,
+// and proposes the Skyrms nadir -- the point where accumulated failures
+// make settlement the gradient descent direction for both walkers.
+//
+// "The map of what did not work IS the territory of what will."
+//
+// This is not persuasion. This is cartography.
+
+// ── Inputs ──────────────────────────────────────────────────────────
+
+(walker_a:Parameter { value: "metacog_state_a" })
+(walker_b:Parameter { value: "metacog_state_b" })
+(payoff_fn:Parameter { value: "payoff" })
+
+// ── Joint Void Surface ──────────────────────────────────────────────
+
+(void_a:Logic { op: "read_void_boundary", walker: "a" })
+(void_b:Logic { op: "read_void_boundary", walker: "b" })
+(complement_a:Logic { op: "complement_distribution", walker: "a" })
+(complement_b:Logic { op: "complement_distribution", walker: "b" })
+
+(walker_a)-[:PROCESS]->(void_a)-[:PROCESS]->(complement_a)
+(walker_b)-[:PROCESS]->(void_b)-[:PROCESS]->(complement_b)
+
+(joint_surface:Logic { op: "outer_product" })
+(complement_a | complement_b)-[:FOLD]->(joint_surface)
+
+// ── Nadir Proposal ──────────────────────────────────────────────────
+
+(nadir_point:Logic { op: "argmax_joint_surface" })
+(proposal_a:Result { kind: "ok", valueFrom: "nadir_point[0]" })
+(proposal_b:Result { kind: "ok", valueFrom: "nadir_point[1]" })
+
+(joint_surface)-[:PROCESS]->(nadir_point)
+(nadir_point)-[:FORK]->(proposal_a | proposal_b)
+
+// ── Walker Decisions (self-interested) ──────────────────────────────
+
+(decide_a:Logic { op: "accept_if_complement_weight_higher" })
+(decide_b:Logic { op: "accept_if_complement_weight_higher" })
+(own_choice_a:Logic { op: "c0_choose", walker: "a" })
+(own_choice_b:Logic { op: "c0_choose", walker: "b" })
+
+(complement_a)-[:PROCESS]->(own_choice_a)
+(complement_b)-[:PROCESS]->(own_choice_b)
+(proposal_a | own_choice_a)-[:RACE { metric: "complement_weight" }]->(decide_a)
+(proposal_b | own_choice_b)-[:RACE { metric: "complement_weight" }]->(decide_b)
+
+// ── Interaction ─────────────────────────────────────────────────────
+
+(interact:Logic { op: "evaluate_payoff" })
+(decide_a | decide_b)-[:FOLD]->(interact)
+
+(success:Result { kind: "ok", valueFrom: "interact" })
+(failure:Result { kind: "err", errorFrom: "mismatch" })
+(interact)-[:FORK]->(success | failure)
+
+// ── Void Update (success using failure) ─────────────────────────────
+
+(update_a:GradientStep { learningRate: "1", parameterKey: "void_a", gradientKey: "other_offer" })
+(update_b:GradientStep { learningRate: "1", parameterKey: "void_b", gradientKey: "other_offer" })
+
+(failure)-[:FORK]->(update_a | update_b)
+(update_a)-[:PROCESS]->(void_a)
+(update_b)-[:PROCESS]->(void_b)
+(success)-[:PROCESS]->(settlement:Sink)
+
+// ── Metacognitive Adaptation (both walkers) ─────────────────────────
+
+(c1_a:Logic { op: "c1_measure", walker: "a" })
+(c1_b:Logic { op: "c1_measure", walker: "b" })
+(c3_a:GradientStep { learningRate: "0.1", parameterKey: "eta_a,exploration_a", gradientKey: "kurtosis_a" })
+(c3_b:GradientStep { learningRate: "0.1", parameterKey: "eta_b,exploration_b", gradientKey: "kurtosis_b" })
+
+(complement_a)-[:PROCESS]->(c1_a)-[:PROCESS]->(c3_a)-[:PROCESS]->(walker_a)
+(complement_b)-[:PROCESS]->(c1_b)-[:PROCESS]->(c3_b)-[:PROCESS]->(walker_b)
+
+// ── Nadir Detection ─────────────────────────────────────────────────
+
+(distance:Logic { op: "manhattan_distance" })
+(kurtosis_check:Logic { op: "kurtosis_stability" })
+(mi_check:Logic { op: "mutual_information_positive" })
+
+(joint_surface)-[:FORK]->(distance | kurtosis_check | mi_check)
+(distance | kurtosis_check | mi_check)-[:FOLD { strategy: "all_pass" }]->(convergence:Option)
+
+(convergence)-[:FORK]->(certificate:Sink | continue:Parameter)
+(continue)-[:PROCESS]->(walker_a)
+(continue)-[:PROCESS]->(walker_b)
+
+// Convergence certificate: all three conditions hold for WindowSize rounds.
+// The Skyrms nadir is the fixed point. Failure is the fuel.
