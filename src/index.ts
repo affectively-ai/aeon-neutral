@@ -12,8 +12,8 @@
  *    matrix is the Skyrms convergence site itself. It void walks the joint
  *    failure surface -- its tombstones are proposals that didn't converge.
  *
- * Uses aeon-bazaar's void walker engine for complement distribution, kurtosis,
- * inverse Bule, and void boundary primitives.
+ * Uses gnosis core void primitives for complement distribution, kurtosis,
+ * inverse Bule, and void boundary operations.
  */
 
 export { NeutralMediator, type MediationConfig, type MediationResult } from './mediator';

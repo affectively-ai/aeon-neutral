@@ -36,7 +36,7 @@ import {
   c2SelectGait,
   c3Adapt,
   GAIT_DEPTH,
-} from '../../aeon-bazaar/src/engine/void-walker';
+} from '../../gnosis/src/runtime/void-walker.js';
 
 import { JointVoidSurface, type JointState } from './joint-surface';
 

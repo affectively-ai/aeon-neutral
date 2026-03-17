@@ -14,7 +14,7 @@ import {
   shannonEntropy,
   excessKurtosis,
   giniCoefficient,
-} from '../../aeon-bazaar/src/engine/void-walker';
+} from '../../gnosis/src/runtime/void-walker.js';
 
 export interface JointState {
   /** Joint complement surface (A.length x B.length flattened) */

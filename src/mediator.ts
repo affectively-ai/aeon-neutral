@@ -24,7 +24,7 @@ import {
   c1Measure,
   c3Adapt,
   updateVoidBoundary,
-} from '../../aeon-bazaar/src/engine/void-walker';
+} from '../../gnosis/src/runtime/void-walker.js';
 
 import { JointVoidSurface, type JointState } from './joint-surface';
 import { SkyrmsNadirDetector, type NadirCertificate } from './nadir-detector';

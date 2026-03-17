@@ -15,7 +15,7 @@ import {
   updateVoidBoundary,
   createMetaCogState,
   complementDistribution,
-} from '../../aeon-bazaar/src/engine/void-walker';
+} from '../../gnosis/src/runtime/void-walker.js';
 import { JointVoidSurface } from './joint-surface';
 import { SkyrmsNadirDetector } from './nadir-detector';
 
