@@ -24,6 +24,7 @@
 import {
   type VoidBoundary,
   type MetaCogState,
+  type Gait,
   createVoidBoundary,
   createMetaCogState,
   complementDistribution,
@@ -32,7 +33,9 @@ import {
   excessKurtosis,
   inverseBule,
   c1Measure,
+  c2SelectGait,
   c3Adapt,
+  GAIT_DEPTH,
 } from '../../aeon-bazaar/src/engine/void-walker';
 
 import { JointVoidSurface, type JointState } from './joint-surface';
@@ -99,6 +102,10 @@ export interface SkyrmsWalkerState {
   acceptedCount: number;
   /** Total proposals rejected */
   rejectedCount: number;
+  /** Current gait -- controls proposal neighborhood radius */
+  gait: Gait;
+  /** Consecutive distance reductions (momentum tracker) */
+  momentum: number;
 }
 
 export function createSkyrmsWalkerState(
@@ -114,6 +121,8 @@ export function createSkyrmsWalkerState(
     prevDistance: Infinity,
     acceptedCount: 0,
     rejectedCount: 0,
+    gait: 'stand',
+    momentum: 0,
   };
 }
 
@@ -183,9 +192,36 @@ export function skyrmsC0Update(
     // Magnitude proportional to how bad it was
     const magnitude = wasAccepted ? 1 : 2;  // Rejection is worse than no improvement
     updateVoidBoundary(state.meta.boundary, proposalFlat, magnitude);
+
+    // Neighborhood poisoning: adjacent proposals get lighter void update.
+    // Radius scales with gait -- stand=0 (no spread), trot=1, canter=2, gallop=3.
+    const radius = state.gait === 'stand' ? 0
+      : state.gait === 'trot' ? 1
+      : state.gait === 'canter' ? 2 : 3;
+
+    if (radius > 0) {
+      const [pA, pB] = decodeProposal(state, proposalFlat);
+      for (let da = -radius; da <= radius; da++) {
+        for (let db = -radius; db <= radius; db++) {
+          if (da === 0 && db === 0) continue; // already updated center
+          const nA = pA + da;
+          const nB = pB + db;
+          if (nA >= 0 && nA < state.numChoicesA && nB >= 0 && nB < state.numChoicesB) {
+            const neighborFlat = nA * state.numChoicesB + nB;
+            // Lighter poison: 1 unit regardless of magnitude, decays with distance
+            const dist = Math.abs(da) + Math.abs(db);
+            const neighborMag = Math.max(1, Math.round(magnitude / dist));
+            updateVoidBoundary(state.meta.boundary, neighborFlat, neighborMag);
+          }
+        }
+      }
+    }
+
     state.rejectedCount++;
+    state.momentum = 0;
   } else {
     state.acceptedCount++;
+    state.momentum++;
   }
 
   // Update payoff tracking
@@ -214,9 +250,75 @@ export function skyrmsC1Measure(state: SkyrmsWalkerState): {
 
 /**
  * c3: Adapt the Skyrms walker based on its own performance.
+ *
+ * Clip-clop: the Skyrms walker has its own gait cycle tuned for
+ * high-dimensional proposal spaces. More aggressive than the game walkers:
+ * - stand (round 0): explore uniformly
+ * - trot (round 5+): start narrowing, neighborhood radius = 1
+ * - canter (round 20+ or kurtosis > 0.3): sharpen eta, radius = 2
+ * - gallop (round 50+ or momentum > 5): maximum exploitation, radius = 3
+ *
+ * Adaptation fires every 5 rounds (not 10 like game walkers) because the
+ * Skyrms walker needs faster feedback in the larger space.
  */
 export function skyrmsC3Adapt(state: SkyrmsWalkerState, kurtosis: number): void {
-  c3Adapt(state.meta, kurtosis);
+  const rounds = state.meta.totalRounds;
+
+  // Faster adaptation cadence for the site walker
+  if (rounds - state.meta.lastAdaptationRound < 5) return;
+
+  // Gait transitions -- more aggressive thresholds than game walkers
+  const prevGait = state.gait;
+  if (rounds < 5) {
+    state.gait = 'stand';
+  } else if (rounds < 20 && kurtosis < 0.3) {
+    state.gait = 'trot';
+  } else if (rounds < 50 || kurtosis < 0.8) {
+    state.gait = 'canter';
+  } else {
+    state.gait = 'gallop';
+  }
+
+  // Momentum can accelerate gait
+  if (state.momentum >= 5 && state.gait !== 'gallop') {
+    state.gait = state.gait === 'stand' ? 'trot'
+      : state.gait === 'trot' ? 'canter' : 'gallop';
+  }
+
+  // Downshift if distance is increasing (regime change)
+  if (state.distanceHistory.length >= 3) {
+    const recent = state.distanceHistory.slice(-3);
+    const increasing = recent[2] > recent[1] && recent[1] > recent[0];
+    if (increasing && state.gait !== 'stand') {
+      state.gait = state.gait === 'gallop' ? 'canter'
+        : state.gait === 'canter' ? 'trot' : 'stand';
+    }
+  }
+
+  // Adapt eta and exploration based on gait
+  switch (state.gait) {
+    case 'stand':
+      state.meta.exploration = Math.min(0.5, state.meta.exploration + 0.02);
+      state.meta.eta = Math.max(1.0, state.meta.eta - 0.1);
+      break;
+    case 'trot':
+      state.meta.exploration = Math.min(0.35, state.meta.exploration + 0.01);
+      state.meta.eta = Math.max(1.5, state.meta.eta - 0.05);
+      break;
+    case 'canter':
+      state.meta.exploration = Math.max(0.05, state.meta.exploration - 0.02);
+      state.meta.eta = Math.min(5.0, state.meta.eta + 0.1);
+      break;
+    case 'gallop':
+      state.meta.exploration = Math.max(0.01, state.meta.exploration - 0.03);
+      state.meta.eta = Math.min(8.0, state.meta.eta + 0.2);
+      break;
+  }
+
+  // Also adapt the game walkers' gaits via the standard c3
+  state.meta.gait = state.gait;
+  state.meta.adaptationCount++;
+  state.meta.lastAdaptationRound = rounds;
 }
 
 // ============================================================================
@@ -255,6 +357,8 @@ export interface ThreeWalkerRoundResult {
   kurtosisA: number;
   kurtosisB: number;
   kurtosisSite: number;
+  /** Skyrms walker's current gait */
+  skyrmsGait: Gait;
 }
 
 export interface ThreeWalkerResult {
@@ -363,6 +467,7 @@ export function mediateThreeWalker(config: ThreeWalkerConfig): ThreeWalkerResult
       kurtosisA: measA.kurtosis,
       kurtosisB: measB.kurtosis,
       kurtosisSite: measS.kurtosis,
+      skyrmsGait: skyrms.gait,
     });
 
     // 8. Check three-way convergence
