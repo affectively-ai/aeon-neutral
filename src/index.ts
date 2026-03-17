@@ -44,3 +44,12 @@ export {
   type VoidTransformerConfig,
   type TransformerRoundOutput,
 } from './void-transformer';
+
+// METACOG: personality-as-void agent negotiation
+export {
+  runChesterVMaxellMetacog,
+  CHESTER_PERSONALITY,
+  MAXELL_PERSONALITY,
+  type MetacogRoundResult,
+  type MetacogMediationResult,
+} from './scenarios/chester-v-maxell-metacog';
