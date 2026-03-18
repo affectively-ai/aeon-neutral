@@ -95,7 +95,7 @@ jobs:
           elif [ -x ./node_modules/.bin/gnosis ]; then
             GNOSIS_CMD=(./node_modules/.bin/gnosis)
           else
-            echo "Gnosis CLI not found. Install @affectively/gnosis or provide ./bin/gnosis.js." >&2
+            echo "Gnosis CLI not found. Install @a0n/gnosis or provide ./bin/gnosis.js." >&2
             exit 1
           fi
 
