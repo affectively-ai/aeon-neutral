@@ -82,18 +82,24 @@ describe('Chester v Maxell: Bazaar (Unbounded)', () => {
   });
 
   test('benchmark: settlement rates and amounts', () => {
-    const results = seeds.map((seed) => runChesterVMaxellBazaar(500, seededRng(seed)));
+    const results = seeds.map((seed) =>
+      runChesterVMaxellBazaar(500, seededRng(seed))
+    );
 
     console.log('\n=== Chester v Maxell: BAZAAR (Unbounded) ===');
     for (let i = 0; i < results.length; i++) {
       const r = results[i];
-      const avgMaxell = r.rounds.reduce((s, rd) => s + rd.maxellPayoff, 0) / r.rounds.length;
-      const avgChester = r.rounds.reduce((s, rd) => s + rd.chesterPayoff, 0) / r.rounds.length;
+      const avgMaxell =
+        r.rounds.reduce((s, rd) => s + rd.maxellPayoff, 0) / r.rounds.length;
+      const avgChester =
+        r.rounds.reduce((s, rd) => s + rd.chesterPayoff, 0) / r.rounds.length;
       console.log(
         `  Seed ${seeds[i]}: ${r.settled ? 'SETTLED' : 'NO DEAL'} ` +
-        `round ${r.settlementRound ?? '-'}, ` +
-        `amount ${r.settlementAmount ? '$' + (r.settlementAmount / 1000) + 'K' : '-'}, ` +
-        `avgPay [M:${avgMaxell.toFixed(1)}, C:${avgChester.toFixed(1)}]`
+          `round ${r.settlementRound ?? '-'}, ` +
+          `amount ${
+            r.settlementAmount ? '$' + r.settlementAmount / 1000 + 'K' : '-'
+          }, ` +
+          `avgPay [M:${avgMaxell.toFixed(1)}, C:${avgChester.toFixed(1)}]`
       );
     }
 
@@ -128,17 +134,23 @@ describe('Chester v Maxell: Neutral (Bounded Mediation)', () => {
   });
 
   test('benchmark: convergence and settlement', () => {
-    const results = seeds.map((seed) => runChesterVMaxellNeutral(500, 0.15, seededRng(seed)));
+    const results = seeds.map((seed) =>
+      runChesterVMaxellNeutral(500, 0.15, seededRng(seed))
+    );
 
     console.log('\n=== Chester v Maxell: NEUTRAL (Bounded Mediation) ===');
     for (let i = 0; i < results.length; i++) {
       const r = results[i];
       console.log(
         `  Seed ${seeds[i]}: ${r.settled ? 'CONVERGED' : 'EXHAUSTED'} ` +
-        `round ${r.convergenceRound ?? r.summary.totalRounds}, ` +
-        `amount ${r.settlementLabel ?? '-'}, ` +
-        `accept ${(r.summary.proposalAcceptanceRate * 100).toFixed(0)}%, ` +
-        `avgPay [M:${r.summary.avgMaxellPayoff.toFixed(1)}, C:${r.summary.avgChesterPayoff.toFixed(1)}, S:${r.summary.avgSkyrmsPayoff.toFixed(1)}]`
+          `round ${r.convergenceRound ?? r.summary.totalRounds}, ` +
+          `amount ${r.settlementLabel ?? '-'}, ` +
+          `accept ${(r.summary.proposalAcceptanceRate * 100).toFixed(0)}%, ` +
+          `avgPay [M:${r.summary.avgMaxellPayoff.toFixed(
+            1
+          )}, C:${r.summary.avgChesterPayoff.toFixed(
+            1
+          )}, S:${r.summary.avgSkyrmsPayoff.toFixed(1)}]`
       );
     }
 
@@ -175,7 +187,9 @@ describe('Chester v Maxell: Bazaar vs Neutral Head-to-Head', () => {
 
     console.log('\n=== Chester v Maxell: BAZAAR vs NEUTRAL ===');
     console.log('  Seed  | Bazaar                          | Neutral');
-    console.log('  ------|-------------------------------|----------------------------------');
+    console.log(
+      '  ------|-------------------------------|----------------------------------'
+    );
 
     let bazaarSettled = 0;
     let neutralSettled = 0;
@@ -192,17 +206,29 @@ describe('Chester v Maxell: Bazaar vs Neutral Head-to-Head', () => {
       neutralTotalRounds += neutral.rounds.length;
 
       const bDesc = bazaar.settled
-        ? `SETTLED r${bazaar.settlementRound} @ $${(bazaar.settlementAmount! / 1000)}K`
+        ? `SETTLED r${bazaar.settlementRound} @ $${
+            bazaar.settlementAmount! / 1000
+          }K`
         : `NO DEAL (${bazaar.rounds.length} rounds)`;
       const nDesc = neutral.settled
         ? `CONVERGED r${neutral.convergenceRound} @ ${neutral.settlementLabel}`
         : `EXHAUSTED (${neutral.summary.totalRounds} rounds)`;
 
-      console.log(`  ${seed.toString().padEnd(5)} | ${bDesc.padEnd(31)} | ${nDesc}`);
+      console.log(
+        `  ${seed.toString().padEnd(5)} | ${bDesc.padEnd(31)} | ${nDesc}`
+      );
     }
 
-    console.log('  ------|-------------------------------|----------------------------------');
-    console.log(`  Total | Settled ${bazaarSettled}/5, avg ${(bazaarTotalRounds / 5).toFixed(0)} rounds | Converged ${neutralSettled}/5, avg ${(neutralTotalRounds / 5).toFixed(0)} rounds`);
+    console.log(
+      '  ------|-------------------------------|----------------------------------'
+    );
+    console.log(
+      `  Total | Settled ${bazaarSettled}/5, avg ${(
+        bazaarTotalRounds / 5
+      ).toFixed(0)} rounds | Converged ${neutralSettled}/5, avg ${(
+        neutralTotalRounds / 5
+      ).toFixed(0)} rounds`
+    );
 
     // Both should produce valid results
     expect(bazaarSettled + neutralSettled).toBeGreaterThanOrEqual(0);
@@ -220,25 +246,46 @@ describe('Chester v Maxell: Void Boundary Analysis', () => {
     console.log('\n=== Void Boundary Analysis (Neutral, seed 42) ===');
     console.log('  Maxell void (which amounts got rejected most):');
     for (let i = 0; i < NUM_CHOICES; i++) {
-      const bar = '#'.repeat(Math.min(50, Math.round(result.summary.maxellFinalVoidDensity[i])));
-      console.log(`    ${OFFER_LABELS[i].padEnd(5)} | ${bar} (${result.summary.maxellFinalVoidDensity[i].toFixed(0)})`);
+      const bar = '#'.repeat(
+        Math.min(50, Math.round(result.summary.maxellFinalVoidDensity[i]))
+      );
+      console.log(
+        `    ${OFFER_LABELS[i].padEnd(
+          5
+        )} | ${bar} (${result.summary.maxellFinalVoidDensity[i].toFixed(0)})`
+      );
     }
 
     console.log('  Chester void (which amounts got rejected most):');
     for (let i = 0; i < NUM_CHOICES; i++) {
-      const bar = '#'.repeat(Math.min(50, Math.round(result.summary.chesterFinalVoidDensity[i])));
-      console.log(`    ${OFFER_LABELS[i].padEnd(5)} | ${bar} (${result.summary.chesterFinalVoidDensity[i].toFixed(0)})`);
+      const bar = '#'.repeat(
+        Math.min(50, Math.round(result.summary.chesterFinalVoidDensity[i]))
+      );
+      console.log(
+        `    ${OFFER_LABELS[i].padEnd(
+          5
+        )} | ${bar} (${result.summary.chesterFinalVoidDensity[i].toFixed(0)})`
+      );
     }
 
     console.log('  Skyrms walker void (top 5 most-rejected proposals):');
     const skyrmsVoid = result.skyrmsWalker.meta.boundary.counts;
-    const indexed = skyrmsVoid.map((v: number, i: number) => ({ idx: i, count: v }));
-    indexed.sort((a: { count: number }, b: { count: number }) => b.count - a.count);
+    const indexed = skyrmsVoid.map((v: number, i: number) => ({
+      idx: i,
+      count: v,
+    }));
+    indexed.sort(
+      (a: { count: number }, b: { count: number }) => b.count - a.count
+    );
     for (let k = 0; k < Math.min(5, indexed.length); k++) {
       const { idx, count } = indexed[k];
       const pA = Math.floor(idx / NUM_CHOICES);
       const pB = idx % NUM_CHOICES;
-      console.log(`    [${OFFER_LABELS[pA]}, ${OFFER_LABELS[pB]}] rejected ${count.toFixed(0)} times`);
+      console.log(
+        `    [${OFFER_LABELS[pA]}, ${
+          OFFER_LABELS[pB]
+        }] rejected ${count.toFixed(0)} times`
+      );
     }
 
     expect(result.rounds.length).toBeGreaterThan(0);

@@ -11,9 +11,7 @@ import {
   NUM_CHOICES,
   chesterVMaxellPayoff,
 } from './chester-v-maxell';
-import {
-  runChesterVMaxellBazaar,
-} from '../../../aeon-bazaar/src/scenarios/chester-v-maxell';
+import { runChesterVMaxellBazaar } from '../../../aeon-bazaar/src/scenarios/chester-v-maxell';
 import { mediateWithVoidAttention } from '../void-attention-mediator';
 import { mediateThreeWalker } from '../skyrms-walker';
 import type { Gait } from '../../../gnosis/src/void.js';
@@ -45,14 +43,14 @@ describe('METACOG: Personality Profiles', () => {
     // First 5 offers ($100K-$140K) have void, last 6 ($150K-$200K) don't
     expect(mh.initialCounts![0]).toBeGreaterThan(0); // $100K
     expect(mh.initialCounts![4]).toBeGreaterThan(0); // $140K
-    expect(mh.initialCounts![5]).toBe(0);             // $150K -- remediation threshold
+    expect(mh.initialCounts![5]).toBe(0); // $150K -- remediation threshold
   });
 
   test('Maxell mental health layer has financial stress (high-offer void)', () => {
     const mh = MAXELL_PERSONALITY.find((l) => l.name === 'mental-health')!;
     // Last offers have void (paying too much causes stress)
     expect(mh.initialCounts![10]).toBeGreaterThan(0); // $200K
-    expect(mh.initialCounts![0]).toBe(0);              // $100K -- cheap is fine for Maxell
+    expect(mh.initialCounts![0]).toBe(0); // $100K -- cheap is fine for Maxell
   });
 
   test('Chester attachment is avoidant', () => {
@@ -60,13 +58,13 @@ describe('METACOG: Personality Profiles', () => {
     // High void at secure and trust dimensions
     expect(att.initialCounts![0]).toBeGreaterThan(0); // secure void
     expect(att.initialCounts![4]).toBeGreaterThan(0); // trust void
-    expect(att.initialCounts![2]).toBe(0);             // avoidant is his style -- no void
+    expect(att.initialCounts![2]).toBe(0); // avoidant is his style -- no void
   });
 
   test('Maxell attachment is secure', () => {
     const att = MAXELL_PERSONALITY.find((l) => l.name === 'attachment')!;
     // Low void at secure, high void at avoidant/disorganized
-    expect(att.initialCounts![0]).toBe(0);             // secure -- no void
+    expect(att.initialCounts![0]).toBe(0); // secure -- no void
     expect(att.initialCounts![2]).toBeGreaterThan(0); // avoidant void
     expect(att.initialCounts![3]).toBeGreaterThan(0); // disorganized void
   });
@@ -117,7 +115,10 @@ describe('METACOG: Chester v Maxell', () => {
   test('personality vectors are valid probability distributions', () => {
     const result = runChesterVMaxellMetacog(100, 5, seededRng(42));
     const sumMaxell = result.maxellPersonalityVector.reduce((a, b) => a + b, 0);
-    const sumChester = result.chesterPersonalityVector.reduce((a, b) => a + b, 0);
+    const sumChester = result.chesterPersonalityVector.reduce(
+      (a, b) => a + b,
+      0
+    );
     // Complement distributions sum to 1 (within floating point tolerance)
     expect(Math.abs(sumMaxell - 1)).toBeLessThan(0.01);
     expect(Math.abs(sumChester - 1)).toBeLessThan(0.01);
@@ -173,8 +174,12 @@ describe('FOUR-WAY: Bazaar vs Three-Walker vs Void Attn vs METACOG', () => {
     const seeds = [42, 123, 456, 789, 1337];
 
     console.log('\n=== Chester v Maxell: FOUR-WAY COMPARISON ===');
-    console.log('  Seed  | Bazaar         | Three-Walker    | Void Attn       | METACOG');
-    console.log('  ------|----------------|-----------------|-----------------|------------------');
+    console.log(
+      '  Seed  | Bazaar         | Three-Walker    | Void Attn       | METACOG'
+    );
+    console.log(
+      '  ------|----------------|-----------------|-----------------|------------------'
+    );
 
     const results: {
       seed: number;
@@ -186,23 +191,41 @@ describe('FOUR-WAY: Bazaar vs Three-Walker vs Void Attn vs METACOG', () => {
 
     for (const seed of seeds) {
       const bazaar = runChesterVMaxellBazaar(500, seededRng(seed));
-      const bzPay = bazaar.rounds.reduce((s, r) => s + r.maxellPayoff + r.chesterPayoff, 0) / (bazaar.rounds.length * 2);
+      const bzPay =
+        bazaar.rounds.reduce(
+          (s, r) => s + r.maxellPayoff + r.chesterPayoff,
+          0
+        ) /
+        (bazaar.rounds.length * 2);
 
       const tw = mediateThreeWalker({
-        numChoicesA: NUM_CHOICES, numChoicesB: NUM_CHOICES, maxRounds: 500,
-        nadirThreshold: 0.15, payoff: chesterVMaxellPayoff, rng: seededRng(seed),
+        numChoicesA: NUM_CHOICES,
+        numChoicesB: NUM_CHOICES,
+        maxRounds: 500,
+        nadirThreshold: 0.15,
+        payoff: chesterVMaxellPayoff,
+        rng: seededRng(seed),
       });
-      const twPay = tw.rounds.reduce((s, r) => s + r.payoffA + r.payoffB, 0) / (tw.rounds.length * 2);
+      const twPay =
+        tw.rounds.reduce((s, r) => s + r.payoffA + r.payoffB, 0) /
+        (tw.rounds.length * 2);
 
       const va = await mediateWithVoidAttention({
-        numChoicesA: NUM_CHOICES, numChoicesB: NUM_CHOICES, maxRounds: 500,
-        nadirThreshold: 0.15, neighborhoodRadius: 2,
-        payoff: chesterVMaxellPayoff, rng: seededRng(seed),
+        numChoicesA: NUM_CHOICES,
+        numChoicesB: NUM_CHOICES,
+        maxRounds: 500,
+        nadirThreshold: 0.15,
+        neighborhoodRadius: 2,
+        payoff: chesterVMaxellPayoff,
+        rng: seededRng(seed),
       });
-      const vaPay = va.rounds.reduce((s, r) => s + r.payoffA + r.payoffB, 0) / (va.rounds.length * 2);
+      const vaPay =
+        va.rounds.reduce((s, r) => s + r.payoffA + r.payoffB, 0) /
+        (va.rounds.length * 2);
 
       const mc = runChesterVMaxellMetacog(500, 5, seededRng(seed));
-      const mcPay = (mc.summary.avgMaxellPayoff + mc.summary.avgChesterPayoff) / 2;
+      const mcPay =
+        (mc.summary.avgMaxellPayoff + mc.summary.avgChesterPayoff) / 2;
 
       results.push({
         seed,
@@ -218,17 +241,43 @@ describe('FOUR-WAY: Bazaar vs Three-Walker vs Void Attn vs METACOG', () => {
       const mcD = mc.settled ? `SET r${mc.convergenceRound}` : 'EXH';
 
       console.log(
-        `  ${seed.toString().padEnd(5)} | ${bzD.padEnd(3)} pay=${bzPay.toFixed(0).padEnd(4)} | ${twD.padEnd(3)} pay=${twPay.toFixed(0).padEnd(5)} | ${vaD.padEnd(3)} pay=${vaPay.toFixed(0).padEnd(5)} | ${mcD.padEnd(3)} pay=${mcPay.toFixed(0)} deal=${(mc.summary.dealRate * 100).toFixed(0)}%`
+        `  ${seed.toString().padEnd(5)} | ${bzD.padEnd(3)} pay=${bzPay
+          .toFixed(0)
+          .padEnd(4)} | ${twD.padEnd(3)} pay=${twPay
+          .toFixed(0)
+          .padEnd(5)} | ${vaD.padEnd(3)} pay=${vaPay
+          .toFixed(0)
+          .padEnd(5)} | ${mcD.padEnd(3)} pay=${mcPay.toFixed(0)} deal=${(
+          mc.summary.dealRate * 100
+        ).toFixed(0)}%`
       );
     }
 
-    console.log('  ------|----------------|-----------------|-----------------|------------------');
+    console.log(
+      '  ------|----------------|-----------------|-----------------|------------------'
+    );
     const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
     console.log(
-      `  Avg   | ${results.filter(r => r.bz.settled).length}/5 pay=${avg(results.map(r => r.bz.pay)).toFixed(0).padEnd(4)} | ` +
-      `${results.filter(r => r.tw.settled).length}/5 pay=${avg(results.map(r => r.tw.pay)).toFixed(0).padEnd(5)} | ` +
-      `${results.filter(r => r.va.settled).length}/5 pay=${avg(results.map(r => r.va.pay)).toFixed(0).padEnd(5)} | ` +
-      `${results.filter(r => r.mc.settled).length}/5 pay=${avg(results.map(r => r.mc.pay)).toFixed(0)} deal=${(avg(results.map(r => r.mc.dealRate)) * 100).toFixed(0)}%`
+      `  Avg   | ${results.filter((r) => r.bz.settled).length}/5 pay=${avg(
+        results.map((r) => r.bz.pay)
+      )
+        .toFixed(0)
+        .padEnd(4)} | ` +
+        `${results.filter((r) => r.tw.settled).length}/5 pay=${avg(
+          results.map((r) => r.tw.pay)
+        )
+          .toFixed(0)
+          .padEnd(5)} | ` +
+        `${results.filter((r) => r.va.settled).length}/5 pay=${avg(
+          results.map((r) => r.va.pay)
+        )
+          .toFixed(0)
+          .padEnd(5)} | ` +
+        `${results.filter((r) => r.mc.settled).length}/5 pay=${avg(
+          results.map((r) => r.mc.pay)
+        ).toFixed(0)} deal=${(
+          avg(results.map((r) => r.mc.dealRate)) * 100
+        ).toFixed(0)}%`
     );
 
     expect(results.length).toBe(5);
@@ -250,7 +299,9 @@ describe('METACOG: Personality Impact', () => {
     for (const pref of result.chesterPreferences.slice(0, 5)) {
       const label = OFFER_LABELS[pref.action] ?? `#${pref.action}`;
       const bar = '#'.repeat(Math.round(pref.weight * 100));
-      console.log(`    ${label.padEnd(5)} ${bar} (${(pref.weight * 100).toFixed(1)}%)`);
+      console.log(
+        `    ${label.padEnd(5)} ${bar} (${(pref.weight * 100).toFixed(1)}%)`
+      );
     }
 
     // Maxell's preferences
@@ -258,7 +309,9 @@ describe('METACOG: Personality Impact', () => {
     for (const pref of result.maxellPreferences.slice(0, 5)) {
       const label = OFFER_LABELS[pref.action] ?? `#${pref.action}`;
       const bar = '#'.repeat(Math.round(pref.weight * 100));
-      console.log(`    ${label.padEnd(5)} ${bar} (${(pref.weight * 100).toFixed(1)}%)`);
+      console.log(
+        `    ${label.padEnd(5)} ${bar} (${(pref.weight * 100).toFixed(1)}%)`
+      );
     }
 
     // Chester's void profile
@@ -277,9 +330,15 @@ describe('METACOG: Personality Impact', () => {
 
     // Gait distribution
     console.log('  Gait distribution:');
-    console.log(`    Maxell: stand=${result.summary.maxellGaitDistribution.stand} trot=${result.summary.maxellGaitDistribution.trot} canter=${result.summary.maxellGaitDistribution.canter} gallop=${result.summary.maxellGaitDistribution.gallop}`);
-    console.log(`    Chester: stand=${result.summary.chesterGaitDistribution.stand} trot=${result.summary.chesterGaitDistribution.trot} canter=${result.summary.chesterGaitDistribution.canter} gallop=${result.summary.chesterGaitDistribution.gallop}`);
-    console.log(`    Deal rate: ${(result.summary.dealRate * 100).toFixed(1)}%`);
+    console.log(
+      `    Maxell: stand=${result.summary.maxellGaitDistribution.stand} trot=${result.summary.maxellGaitDistribution.trot} canter=${result.summary.maxellGaitDistribution.canter} gallop=${result.summary.maxellGaitDistribution.gallop}`
+    );
+    console.log(
+      `    Chester: stand=${result.summary.chesterGaitDistribution.stand} trot=${result.summary.chesterGaitDistribution.trot} canter=${result.summary.chesterGaitDistribution.canter} gallop=${result.summary.chesterGaitDistribution.gallop}`
+    );
+    console.log(
+      `    Deal rate: ${(result.summary.dealRate * 100).toFixed(1)}%`
+    );
 
     expect(result.rounds.length).toBeGreaterThan(0);
   });
@@ -294,13 +353,19 @@ describe('METACOG: Personality Impact', () => {
     }
 
     // Chester should make fewer low offers (health anxiety voids them)
-    const lowOffers = chesterOfferCounts.slice(0, 3).reduce((a: number, b: number) => a + b, 0);
-    const midOffers = chesterOfferCounts.slice(4, 8).reduce((a: number, b: number) => a + b, 0);
+    const lowOffers = chesterOfferCounts
+      .slice(0, 3)
+      .reduce((a: number, b: number) => a + b, 0);
+    const midOffers = chesterOfferCounts
+      .slice(4, 8)
+      .reduce((a: number, b: number) => a + b, 0);
 
     console.log('\n=== Chester Offer Distribution ===');
     for (let i = 0; i < NUM_CHOICES; i++) {
       const bar = '#'.repeat(Math.min(50, chesterOfferCounts[i]));
-      console.log(`    ${OFFER_LABELS[i].padEnd(5)} ${bar} (${chesterOfferCounts[i]})`);
+      console.log(
+        `    ${OFFER_LABELS[i].padEnd(5)} ${bar} (${chesterOfferCounts[i]})`
+      );
     }
 
     // Mid-range should dominate over very low (personality pushes Chester away from $100K-$120K)
@@ -318,7 +383,9 @@ describe('METACOG: Personality Impact', () => {
     console.log('\n=== Maxell Offer Distribution ===');
     for (let i = 0; i < NUM_CHOICES; i++) {
       const bar = '#'.repeat(Math.min(50, maxellOfferCounts[i]));
-      console.log(`    ${OFFER_LABELS[i].padEnd(5)} ${bar} (${maxellOfferCounts[i]})`);
+      console.log(
+        `    ${OFFER_LABELS[i].padEnd(5)} ${bar} (${maxellOfferCounts[i]})`
+      );
     }
 
     expect(maxellOfferCounts.length).toBe(NUM_CHOICES);

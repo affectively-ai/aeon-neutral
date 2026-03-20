@@ -88,7 +88,7 @@ export class NeutralMediator {
     this.surface = new JointVoidSurface(config.numChoicesA, config.numChoicesB);
     this.detector = new SkyrmsNadirDetector(
       config.nadirThreshold ?? 0.1,
-      config.windowSize ?? 5,
+      config.windowSize ?? 5
     );
     this.walkerA = createMetaCogState(config.numChoicesA);
     this.walkerB = createMetaCogState(config.numChoicesB);
@@ -114,7 +114,7 @@ export class NeutralMediator {
       this.walkerA.boundary,
       this.walkerB.boundary,
       this.walkerA.eta,
-      this.walkerB.eta,
+      this.walkerB.eta
     );
 
     for (let round = 1; round <= this.config.maxRounds; round++) {
@@ -123,7 +123,7 @@ export class NeutralMediator {
         this.walkerA.boundary,
         this.walkerB.boundary,
         this.walkerA.eta,
-        this.walkerB.eta,
+        this.walkerB.eta
       );
 
       // 2. Mediator proposes nadir point
@@ -131,14 +131,22 @@ export class NeutralMediator {
 
       // 3. Each walker decides: accept proposal or play own complement
       // Accept if proposal's complement weight >= own choice's weight
-      const distA = complementDistribution(this.walkerA.boundary, this.walkerA.eta);
-      const distB = complementDistribution(this.walkerB.boundary, this.walkerB.eta);
+      const distA = complementDistribution(
+        this.walkerA.boundary,
+        this.walkerA.eta
+      );
+      const distB = complementDistribution(
+        this.walkerB.boundary,
+        this.walkerB.eta
+      );
       const ownChoiceA = c0Choose(this.walkerA, this.rng);
       const ownChoiceB = c0Choose(this.walkerB, this.rng);
 
       // Walker accepts proposal if mediator's suggestion has higher complement weight
-      const offerA = distA[proposalA] >= distA[ownChoiceA] ? proposalA : ownChoiceA;
-      const offerB = distB[proposalB] >= distB[ownChoiceB] ? proposalB : ownChoiceB;
+      const offerA =
+        distA[proposalA] >= distA[ownChoiceA] ? proposalA : ownChoiceA;
+      const offerB =
+        distB[proposalB] >= distB[ownChoiceB] ? proposalB : ownChoiceB;
       const accepted = offerA === proposalA && offerB === proposalB;
 
       // 4. Evaluate payoffs
@@ -152,9 +160,15 @@ export class NeutralMediator {
       const wasFailure = offerA !== offerB;
       if (wasFailure) {
         // A learns that B's choice exists in the landscape
-        updateVoidBoundary(this.walkerA.boundary, Math.min(offerB, this.config.numChoicesA - 1));
+        updateVoidBoundary(
+          this.walkerA.boundary,
+          Math.min(offerB, this.config.numChoicesA - 1)
+        );
         // B learns that A's choice exists in the landscape
-        updateVoidBoundary(this.walkerB.boundary, Math.min(offerA, this.config.numChoicesB - 1));
+        updateVoidBoundary(
+          this.walkerB.boundary,
+          Math.min(offerA, this.config.numChoicesB - 1)
+        );
       }
 
       // 6. c1 monitor, c3 adapt
@@ -168,7 +182,7 @@ export class NeutralMediator {
         this.walkerA.boundary,
         this.walkerB.boundary,
         this.walkerA.eta,
-        this.walkerB.eta,
+        this.walkerB.eta
       );
 
       // Record round

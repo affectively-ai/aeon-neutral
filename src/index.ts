@@ -16,7 +16,11 @@
  * inverse Bule, and void boundary operations.
  */
 
-export { NeutralMediator, type MediationConfig, type MediationResult } from './mediator';
+export {
+  NeutralMediator,
+  type MediationConfig,
+  type MediationResult,
+} from './mediator';
 export { JointVoidSurface, type JointState } from './joint-surface';
 export { SkyrmsNadirDetector, type NadirCertificate } from './nadir-detector';
 export {

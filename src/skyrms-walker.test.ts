@@ -37,33 +37,33 @@ function seededRng(seed: number): () => number {
 
 /** Hawk-Dove: V=4, C=6. Choices: 0=hawk, 1=dove */
 function hawkDovePayoff(a: number, b: number): [number, number] {
-  if (a === 0 && b === 0) return [-1, -1];     // hawk-hawk: (V-C)/2
-  if (a === 0 && b === 1) return [4, 0];        // hawk-dove: V, 0
-  if (a === 1 && b === 0) return [0, 4];        // dove-hawk: 0, V
-  return [2, 2];                                 // dove-dove: V/2, V/2
+  if (a === 0 && b === 0) return [-1, -1]; // hawk-hawk: (V-C)/2
+  if (a === 0 && b === 1) return [4, 0]; // hawk-dove: V, 0
+  if (a === 1 && b === 0) return [0, 4]; // dove-hawk: 0, V
+  return [2, 2]; // dove-dove: V/2, V/2
 }
 
 /** Prisoner's Dilemma: 0=defect, 1=cooperate */
 function prisonerPayoff(a: number, b: number): [number, number] {
-  if (a === 1 && b === 1) return [3, 3];        // cooperate-cooperate
-  if (a === 1 && b === 0) return [0, 5];        // cooperate-defect
-  if (a === 0 && b === 1) return [5, 0];        // defect-cooperate
-  return [1, 1];                                 // defect-defect
+  if (a === 1 && b === 1) return [3, 3]; // cooperate-cooperate
+  if (a === 1 && b === 0) return [0, 5]; // cooperate-defect
+  if (a === 0 && b === 1) return [5, 0]; // defect-cooperate
+  return [1, 1]; // defect-defect
 }
 
 /** Battle of Sexes: 0=opera, 1=football */
 function battlePayoff(a: number, b: number): [number, number] {
-  if (a === 0 && b === 0) return [3, 2];        // both opera
-  if (a === 1 && b === 1) return [2, 3];        // both football
-  return [0, 0];                                 // mismatch
+  if (a === 0 && b === 0) return [3, 2]; // both opera
+  if (a === 1 && b === 1) return [2, 3]; // both football
+  return [0, 0]; // mismatch
 }
 
 /** Stag Hunt: 0=hare, 1=stag */
 function stagHuntPayoff(a: number, b: number): [number, number] {
-  if (a === 1 && b === 1) return [4, 4];        // stag-stag
-  if (a === 0 && b === 0) return [2, 2];        // hare-hare
-  if (a === 1 && b === 0) return [0, 2];        // stag-hare
-  return [2, 0];                                 // hare-stag
+  if (a === 1 && b === 1) return [4, 4]; // stag-stag
+  if (a === 0 && b === 0) return [2, 2]; // hare-hare
+  if (a === 1 && b === 0) return [0, 2]; // stag-hare
+  return [2, 0]; // hare-stag
 }
 
 /** 3-choice coordination: payoff = 3 if match, 0 if mismatch */
@@ -213,13 +213,17 @@ describe('SkyrmsNadirDetector', () => {
   test('does not certify when distance exceeds threshold', () => {
     const detector = new SkyrmsNadirDetector(0.1, 3);
     const good = {
-      surface: [], distance: 0.05, jointEntropy: 1.0,
-      mutualInformation: 0.1, jointKurtosis: 0.0, gini: 0.0,
+      surface: [],
+      distance: 0.05,
+      jointEntropy: 1.0,
+      mutualInformation: 0.1,
+      jointKurtosis: 0.0,
+      gini: 0.0,
       nadirPoint: [0, 0] as [number, number],
     };
     const bad = { ...good, distance: 0.5 };
     detector.observe(good, false);
-    detector.observe(bad, false);  // breaks the window
+    detector.observe(bad, false); // breaks the window
     detector.observe(good, false);
     expect(detector.observe(good, false)).toBeNull(); // window tainted
   });
@@ -227,8 +231,12 @@ describe('SkyrmsNadirDetector', () => {
   test('reset clears state', () => {
     const detector = new SkyrmsNadirDetector(0.1, 2);
     const state = {
-      surface: [], distance: 0.05, jointEntropy: 1.0,
-      mutualInformation: 0.1, jointKurtosis: 0.0, gini: 0.0,
+      surface: [],
+      distance: 0.05,
+      jointEntropy: 1.0,
+      mutualInformation: 0.1,
+      jointKurtosis: 0.0,
+      gini: 0.0,
       nadirPoint: [0, 0] as [number, number],
     };
     detector.observe(state, false);
@@ -304,7 +312,7 @@ describe('Three-Walker Mediation', () => {
     expect(lastDist).toBeLessThanOrEqual(firstDist + 0.5);
   });
 
-  test('Prisoner\'s Dilemma runs without error', () => {
+  test("Prisoner's Dilemma runs without error", () => {
     const result = mediateThreeWalker({
       numChoicesA: 2,
       numChoicesB: 2,
@@ -422,9 +430,14 @@ describe('Three-Walker Mediation', () => {
 // ============================================================================
 
 describe('Benchmark: Convergence Speed', () => {
-  const games: [string, (a: number, b: number) => [number, number], number, number][] = [
+  const games: [
+    string,
+    (a: number, b: number) => [number, number],
+    number,
+    number
+  ][] = [
     ['Hawk-Dove (2x2)', hawkDovePayoff, 2, 2],
-    ['Prisoner\'s Dilemma (2x2)', prisonerPayoff, 2, 2],
+    ["Prisoner's Dilemma (2x2)", prisonerPayoff, 2, 2],
     ['Battle of Sexes (2x2)', battlePayoff, 2, 2],
     ['Stag Hunt (2x2)', stagHuntPayoff, 2, 2],
     ['Coordination (3x3)', coordinationPayoff3, 3, 3],
@@ -458,8 +471,12 @@ describe('Benchmark: Convergence Speed', () => {
         const elapsed = performance.now() - t0;
 
         const accepted = result.rounds.filter((r) => r.proposalAccepted).length;
-        const avgA = result.rounds.reduce((s, r) => s + r.payoffA, 0) / result.rounds.length;
-        const avgB = result.rounds.reduce((s, r) => s + r.payoffB, 0) / result.rounds.length;
+        const avgA =
+          result.rounds.reduce((s, r) => s + r.payoffA, 0) /
+          result.rounds.length;
+        const avgB =
+          result.rounds.reduce((s, r) => s + r.payoffB, 0) /
+          result.rounds.length;
 
         results.push({
           settled: result.settled,
@@ -474,18 +491,27 @@ describe('Benchmark: Convergence Speed', () => {
 
       // Aggregate stats
       const settledCount = results.filter((r) => r.settled).length;
-      const avgRounds = results.reduce((s, r) => s + r.rounds, 0) / results.length;
-      const avgDist = results.reduce((s, r) => s + r.finalDistance, 0) / results.length;
-      const avgAcceptance = results.reduce((s, r) => s + r.acceptanceRate, 0) / results.length;
-      const avgPayA = results.reduce((s, r) => s + r.avgPayoffA, 0) / results.length;
-      const avgPayB = results.reduce((s, r) => s + r.avgPayoffB, 0) / results.length;
+      const avgRounds =
+        results.reduce((s, r) => s + r.rounds, 0) / results.length;
+      const avgDist =
+        results.reduce((s, r) => s + r.finalDistance, 0) / results.length;
+      const avgAcceptance =
+        results.reduce((s, r) => s + r.acceptanceRate, 0) / results.length;
+      const avgPayA =
+        results.reduce((s, r) => s + r.avgPayoffA, 0) / results.length;
+      const avgPayB =
+        results.reduce((s, r) => s + r.avgPayoffB, 0) / results.length;
 
       console.log(`\n=== ${name} ===`);
       console.log(`  Settled: ${settledCount}/${seeds.length}`);
       console.log(`  Avg rounds: ${avgRounds.toFixed(1)}`);
       console.log(`  Avg final distance: ${avgDist.toFixed(4)}`);
-      console.log(`  Avg acceptance rate: ${(avgAcceptance * 100).toFixed(1)}%`);
-      console.log(`  Avg payoff A: ${avgPayA.toFixed(3)}, B: ${avgPayB.toFixed(3)}`);
+      console.log(
+        `  Avg acceptance rate: ${(avgAcceptance * 100).toFixed(1)}%`
+      );
+      console.log(
+        `  Avg payoff A: ${avgPayA.toFixed(3)}, B: ${avgPayB.toFixed(3)}`
+      );
 
       // Basic sanity: should complete without error
       expect(results.length).toBe(seeds.length);
@@ -515,7 +541,9 @@ describe('Benchmark: Passive vs Three-Walker', () => {
     });
 
     // Passive mediator (imported from mediator.ts)
+    /* eslint-disable @typescript-eslint/no-require-imports */
     const { NeutralMediator } = require('./mediator');
+    /* eslint-enable @typescript-eslint/no-require-imports */
     const passive = new NeutralMediator({
       numChoicesA: 2,
       numChoicesB: 2,
@@ -526,12 +554,26 @@ describe('Benchmark: Passive vs Three-Walker', () => {
     });
     const passiveResult = passive.mediate();
 
-    const threeDist = threeResult.rounds[threeResult.rounds.length - 1].distance;
-    const passiveDist = passiveResult.rounds[passiveResult.rounds.length - 1].distance;
+    const threeDist =
+      threeResult.rounds[threeResult.rounds.length - 1].distance;
+    const passiveDist =
+      passiveResult.rounds[passiveResult.rounds.length - 1].distance;
 
     console.log('\n=== Passive vs Three-Walker (Hawk-Dove) ===');
-    console.log(`  Passive: ${passiveResult.rounds.length} rounds, final dist ${passiveDist.toFixed(4)}, settled: ${passiveResult.settled}`);
-    console.log(`  Three-Walker: ${threeResult.rounds.length} rounds, final dist ${threeDist.toFixed(4)}, settled: ${threeResult.settled}`);
+    console.log(
+      `  Passive: ${
+        passiveResult.rounds.length
+      } rounds, final dist ${passiveDist.toFixed(4)}, settled: ${
+        passiveResult.settled
+      }`
+    );
+    console.log(
+      `  Three-Walker: ${
+        threeResult.rounds.length
+      } rounds, final dist ${threeDist.toFixed(4)}, settled: ${
+        threeResult.settled
+      }`
+    );
 
     // Both should produce valid results
     expect(threeResult.rounds.length).toBeGreaterThan(0);

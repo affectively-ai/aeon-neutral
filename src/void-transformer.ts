@@ -118,7 +118,10 @@ export class VoidAttentionHead {
       selected = weights.length - 1;
       for (let i = 0; i < weights.length; i++) {
         cum += weights[i];
-        if (r < cum) { selected = i; break; }
+        if (r < cum) {
+          selected = i;
+          break;
+        }
       }
     } else {
       // Argmax (greedy decoding)
@@ -214,7 +217,9 @@ export class VoidCrossAttentionHead {
 
   constructor(config: CrossAttentionConfig) {
     this.config = config;
-    this.proposalVoid = createVoidBoundary(config.numChoicesA * config.numChoicesB);
+    this.proposalVoid = createVoidBoundary(
+      config.numChoicesA * config.numChoicesB
+    );
     this.eta = config.eta;
     this.queryCount = 0;
   }
@@ -236,7 +241,7 @@ export class VoidCrossAttentionHead {
     boundaryB: VoidBoundary,
     etaA: number,
     etaB: number,
-    rng?: () => number,
+    rng?: () => number
   ): CrossAttentionOutput {
     this.queryCount++;
 
@@ -275,7 +280,10 @@ export class VoidCrossAttentionHead {
       selectedFlat = weights.length - 1;
       for (let k = 0; k < weights.length; k++) {
         cum += weights[k];
-        if (r < cum) { selectedFlat = k; break; }
+        if (r < cum) {
+          selectedFlat = k;
+          break;
+        }
       }
     } else {
       selectedFlat = 0;
@@ -295,11 +303,7 @@ export class VoidCrossAttentionHead {
   /**
    * Reject a proposal: update the Skyrms void with 2D neighborhood.
    */
-  rejectProposal(
-    offerA: number,
-    offerB: number,
-    magnitude: number = 1,
-  ): void {
+  rejectProposal(offerA: number, offerB: number, magnitude: number = 1): void {
     const nB = this.config.numChoicesB;
     const flat = offerA * nB + offerB;
     updateVoidBoundary(this.proposalVoid, flat, magnitude);
@@ -311,10 +315,19 @@ export class VoidCrossAttentionHead {
           if (da === 0 && db === 0) continue;
           const nA = offerA + da;
           const nBi = offerB + db;
-          if (nA >= 0 && nA < this.config.numChoicesA && nBi >= 0 && nBi < this.config.numChoicesB) {
+          if (
+            nA >= 0 &&
+            nA < this.config.numChoicesA &&
+            nBi >= 0 &&
+            nBi < this.config.numChoicesB
+          ) {
             const neighborFlat = nA * nB + nBi;
             const dist = Math.abs(da) + Math.abs(db);
-            updateVoidBoundary(this.proposalVoid, neighborFlat, Math.max(1, Math.round(magnitude / dist)));
+            updateVoidBoundary(
+              this.proposalVoid,
+              neighborFlat,
+              Math.max(1, Math.round(magnitude / dist))
+            );
           }
         }
       }
@@ -417,21 +430,25 @@ export class VoidTransformerBlock {
     const decay = config.decayRate ?? 0;
 
     // Multi-head self-attention for each walker
-    this.headsA = Array.from({ length: numHeads }, () =>
-      new VoidAttentionHead({
-        numChoices: config.numChoicesA,
-        eta: selfEta,
-        neighborhoodRadius: radius,
-        decayRate: decay,
-      }),
+    this.headsA = Array.from(
+      { length: numHeads },
+      () =>
+        new VoidAttentionHead({
+          numChoices: config.numChoicesA,
+          eta: selfEta,
+          neighborhoodRadius: radius,
+          decayRate: decay,
+        })
     );
-    this.headsB = Array.from({ length: numHeads }, () =>
-      new VoidAttentionHead({
-        numChoices: config.numChoicesB,
-        eta: selfEta,
-        neighborhoodRadius: radius,
-        decayRate: decay,
-      }),
+    this.headsB = Array.from(
+      { length: numHeads },
+      () =>
+        new VoidAttentionHead({
+          numChoices: config.numChoicesB,
+          eta: selfEta,
+          neighborhoodRadius: radius,
+          decayRate: decay,
+        })
     );
 
     // Cross-attention (Skyrms)
@@ -456,7 +473,7 @@ export class VoidTransformerBlock {
    */
   forward(
     payoff: (a: number, b: number) => [number, number],
-    rng: () => number,
+    rng: () => number
   ): TransformerRoundOutput {
     this.roundCount++;
     const cadence = this.config.ffnCadence ?? 5;
@@ -476,16 +493,24 @@ export class VoidTransformerBlock {
       this.headsB[0].boundary,
       this.headsA[0].eta,
       this.headsB[0].eta,
-      rng,
+      rng
     );
 
     // 3. Walker decisions: accept cross-attention proposal or play own
-    const distA = complementDistribution(this.headsA[0].boundary, this.headsA[0].eta);
-    const distB = complementDistribution(this.headsB[0].boundary, this.headsB[0].eta);
+    const distA = complementDistribution(
+      this.headsA[0].boundary,
+      this.headsA[0].eta
+    );
+    const distB = complementDistribution(
+      this.headsB[0].boundary,
+      this.headsB[0].eta
+    );
     const [proposalA, proposalB] = cross.selected;
 
-    const offerA = distA[proposalA] >= distA[ownChoiceA] ? proposalA : ownChoiceA;
-    const offerB = distB[proposalB] >= distB[ownChoiceB] ? proposalB : ownChoiceB;
+    const offerA =
+      distA[proposalA] >= distA[ownChoiceA] ? proposalA : ownChoiceA;
+    const offerB =
+      distB[proposalB] >= distB[ownChoiceB] ? proposalB : ownChoiceB;
     const proposalAccepted = offerA === proposalA && offerB === proposalB;
 
     // 4. Evaluate and update residual (void boundaries)
@@ -522,7 +547,11 @@ export class VoidTransformerBlock {
 
     // Cross-attention head: update based on whether proposal improved things
     if (!proposalAccepted || offerA !== offerB) {
-      this.crossHead.rejectProposal(proposalA, proposalB, proposalAccepted ? 1 : 2);
+      this.crossHead.rejectProposal(
+        proposalA,
+        proposalB,
+        proposalAccepted ? 1 : 2
+      );
       this.momentumS = 0;
     } else {
       this.momentumS++;
@@ -535,9 +564,24 @@ export class VoidTransformerBlock {
 
     // 6. Feed-forward (c3 gait adaptation)
     if (this.roundCount % cadence === 0) {
-      this.gaitA = this.adaptGait(this.gaitA, selfA[0].kurtosis, this.momentumA, this.roundCount);
-      this.gaitB = this.adaptGait(this.gaitB, selfB[0].kurtosis, this.momentumB, this.roundCount);
-      this.gaitS = this.adaptGait(this.gaitS, cross.kurtosis, this.momentumS, this.roundCount);
+      this.gaitA = this.adaptGait(
+        this.gaitA,
+        selfA[0].kurtosis,
+        this.momentumA,
+        this.roundCount
+      );
+      this.gaitB = this.adaptGait(
+        this.gaitB,
+        selfB[0].kurtosis,
+        this.momentumB,
+        this.roundCount
+      );
+      this.gaitS = this.adaptGait(
+        this.gaitS,
+        cross.kurtosis,
+        this.momentumS,
+        this.roundCount
+      );
 
       // Update etas based on gait
       for (const head of this.headsA) head.eta = this.etaForGait(this.gaitA);
@@ -559,7 +603,12 @@ export class VoidTransformerBlock {
   }
 
   /** Gait adaptation (the feed-forward network) */
-  private adaptGait(current: Gait, kurtosis: number, momentum: number, round: number): Gait {
+  private adaptGait(
+    current: Gait,
+    kurtosis: number,
+    momentum: number,
+    round: number
+  ): Gait {
     if (round < 5) return 'stand';
     if (momentum >= 5) {
       // Accelerate
@@ -567,7 +616,12 @@ export class VoidTransformerBlock {
       if (current === 'trot') return 'canter';
       return 'gallop';
     }
-    if (kurtosis > 0.5 && round > 20) return current === 'stand' ? 'trot' : current === 'trot' ? 'canter' : 'gallop';
+    if (kurtosis > 0.5 && round > 20)
+      return current === 'stand'
+        ? 'trot'
+        : current === 'trot'
+        ? 'canter'
+        : 'gallop';
     if (kurtosis < -0.5 && current !== 'stand') {
       // Decelerate
       if (current === 'gallop') return 'canter';
@@ -580,10 +634,14 @@ export class VoidTransformerBlock {
   /** Map gait to eta (temperature) */
   private etaForGait(gait: Gait): number {
     switch (gait) {
-      case 'stand': return 1.5;
-      case 'trot': return 2.5;
-      case 'canter': return 4.0;
-      case 'gallop': return 7.0;
+      case 'stand':
+        return 1.5;
+      case 'trot':
+        return 2.5;
+      case 'canter':
+        return 4.0;
+      case 'gallop':
+        return 7.0;
     }
   }
 
@@ -598,7 +656,10 @@ export class VoidTransformerBlock {
     return {
       headsA: this.headsA.map((h) => ({ boundary: h.boundary, eta: h.eta })),
       headsB: this.headsB.map((h) => ({ boundary: h.boundary, eta: h.eta })),
-      crossHead: { boundary: this.crossHead.proposalVoid, eta: this.crossHead.eta },
+      crossHead: {
+        boundary: this.crossHead.proposalVoid,
+        eta: this.crossHead.eta,
+      },
       gaits: { a: this.gaitA, b: this.gaitB, s: this.gaitS },
       roundCount: this.roundCount,
     };

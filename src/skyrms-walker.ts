@@ -64,7 +64,7 @@ export function computeSkyrmsPayoff(
   etaA: number,
   etaB: number,
   numChoicesA: number,
-  numChoicesB: number,
+  numChoicesB: number
 ): SkyrmsPayoffMatrix {
   const distA = complementDistribution(boundaryA, etaA);
   const distB = complementDistribution(boundaryB, etaB);
@@ -110,7 +110,7 @@ export interface SkyrmsWalkerState {
 
 export function createSkyrmsWalkerState(
   numChoicesA: number,
-  numChoicesB: number,
+  numChoicesB: number
 ): SkyrmsWalkerState {
   return {
     meta: createMetaCogState(numChoicesA * numChoicesB),
@@ -131,7 +131,7 @@ export function createSkyrmsWalkerState(
  */
 export function decodeProposal(
   state: SkyrmsWalkerState,
-  flatIdx: number,
+  flatIdx: number
 ): [number, number] {
   const i = Math.floor(flatIdx / state.numChoicesB);
   const j = flatIdx % state.numChoicesB;
@@ -151,7 +151,7 @@ export function decodeProposal(
  */
 export function skyrmsC0Choose(
   state: SkyrmsWalkerState,
-  rng: () => number,
+  rng: () => number
 ): [number, number] {
   const N = state.proposalSpaceSize;
   const dist = complementDistribution(state.meta.boundary, state.meta.eta);
@@ -183,21 +183,26 @@ export function skyrmsC0Update(
   state: SkyrmsWalkerState,
   proposalFlat: number,
   newDistance: number,
-  wasAccepted: boolean,
+  wasAccepted: boolean
 ): void {
   const distanceDelta = newDistance - state.prevDistance;
 
   // Proposal failed if: rejected, or distance didn't decrease
   if (!wasAccepted || distanceDelta >= 0) {
     // Magnitude proportional to how bad it was
-    const magnitude = wasAccepted ? 1 : 2;  // Rejection is worse than no improvement
+    const magnitude = wasAccepted ? 1 : 2; // Rejection is worse than no improvement
     updateVoidBoundary(state.meta.boundary, proposalFlat, magnitude);
 
     // Neighborhood poisoning: adjacent proposals get lighter void update.
     // Radius scales with gait -- stand=0 (no spread), trot=1, canter=2, gallop=3.
-    const radius = state.gait === 'stand' ? 0
-      : state.gait === 'trot' ? 1
-      : state.gait === 'canter' ? 2 : 3;
+    const radius =
+      state.gait === 'stand'
+        ? 0
+        : state.gait === 'trot'
+        ? 1
+        : state.gait === 'canter'
+        ? 2
+        : 3;
 
     if (radius > 0) {
       const [pA, pB] = decodeProposal(state, proposalFlat);
@@ -206,7 +211,12 @@ export function skyrmsC0Update(
           if (da === 0 && db === 0) continue; // already updated center
           const nA = pA + da;
           const nB = pB + db;
-          if (nA >= 0 && nA < state.numChoicesA && nB >= 0 && nB < state.numChoicesB) {
+          if (
+            nA >= 0 &&
+            nA < state.numChoicesA &&
+            nB >= 0 &&
+            nB < state.numChoicesB
+          ) {
             const neighborFlat = nA * state.numChoicesB + nB;
             // Lighter poison: 1 unit regardless of magnitude, decays with distance
             const dist = Math.abs(da) + Math.abs(db);
@@ -261,7 +271,10 @@ export function skyrmsC1Measure(state: SkyrmsWalkerState): {
  * Adaptation fires every 5 rounds (not 10 like game walkers) because the
  * Skyrms walker needs faster feedback in the larger space.
  */
-export function skyrmsC3Adapt(state: SkyrmsWalkerState, kurtosis: number): void {
+export function skyrmsC3Adapt(
+  state: SkyrmsWalkerState,
+  kurtosis: number
+): void {
   const rounds = state.meta.totalRounds;
 
   // Faster adaptation cadence for the site walker
@@ -281,8 +294,12 @@ export function skyrmsC3Adapt(state: SkyrmsWalkerState, kurtosis: number): void 
 
   // Momentum can accelerate gait
   if (state.momentum >= 5 && state.gait !== 'gallop') {
-    state.gait = state.gait === 'stand' ? 'trot'
-      : state.gait === 'trot' ? 'canter' : 'gallop';
+    state.gait =
+      state.gait === 'stand'
+        ? 'trot'
+        : state.gait === 'trot'
+        ? 'canter'
+        : 'gallop';
   }
 
   // Downshift if distance is increasing (regime change)
@@ -290,8 +307,12 @@ export function skyrmsC3Adapt(state: SkyrmsWalkerState, kurtosis: number): void 
     const recent = state.distanceHistory.slice(-3);
     const increasing = recent[2] > recent[1] && recent[1] > recent[0];
     if (increasing && state.gait !== 'stand') {
-      state.gait = state.gait === 'gallop' ? 'canter'
-        : state.gait === 'canter' ? 'trot' : 'stand';
+      state.gait =
+        state.gait === 'gallop'
+          ? 'canter'
+          : state.gait === 'canter'
+          ? 'trot'
+          : 'stand';
     }
   }
 
@@ -383,14 +404,19 @@ export interface ThreeWalkerResult {
  * below threshold -- meaning its proposals are consistently accepted and
  * the game walkers are aligned.
  */
-export function mediateThreeWalker(config: ThreeWalkerConfig): ThreeWalkerResult {
+export function mediateThreeWalker(
+  config: ThreeWalkerConfig
+): ThreeWalkerResult {
   const rng = config.rng ?? Math.random;
   const threshold = config.nadirThreshold ?? 0.1;
   const windowSize = 5;
 
   const walkerA = createMetaCogState(config.numChoicesA);
   const walkerB = createMetaCogState(config.numChoicesB);
-  const skyrms = createSkyrmsWalkerState(config.numChoicesA, config.numChoicesB);
+  const skyrms = createSkyrmsWalkerState(
+    config.numChoicesA,
+    config.numChoicesB
+  );
   const surface = new JointVoidSurface(config.numChoicesA, config.numChoicesB);
 
   const rounds: ThreeWalkerRoundResult[] = [];
@@ -420,27 +446,41 @@ export function mediateThreeWalker(config: ThreeWalkerConfig): ThreeWalkerResult
 
     // 4. Update game walkers' void boundaries
     if (payoffA < payoffB) updateVoidBoundary(walkerA.boundary, offerA);
-    if (payoffA < 0) updateVoidBoundary(walkerA.boundary, offerA, Math.abs(payoffA));
+    if (payoffA < 0)
+      updateVoidBoundary(walkerA.boundary, offerA, Math.abs(payoffA));
     walkerA.totalPayoff += payoffA;
     walkerA.totalRounds++;
 
     if (payoffB < payoffA) updateVoidBoundary(walkerB.boundary, offerB);
-    if (payoffB < 0) updateVoidBoundary(walkerB.boundary, offerB, Math.abs(payoffB));
+    if (payoffB < 0)
+      updateVoidBoundary(walkerB.boundary, offerB, Math.abs(payoffB));
     walkerB.totalPayoff += payoffB;
     walkerB.totalRounds++;
 
     // Cross-pollinate: each walker learns from the other's rejected choice
     if (offerA !== offerB) {
-      updateVoidBoundary(walkerA.boundary, Math.min(offerB, config.numChoicesA - 1));
-      updateVoidBoundary(walkerB.boundary, Math.min(offerA, config.numChoicesB - 1));
+      updateVoidBoundary(
+        walkerA.boundary,
+        Math.min(offerB, config.numChoicesA - 1)
+      );
+      updateVoidBoundary(
+        walkerB.boundary,
+        Math.min(offerA, config.numChoicesB - 1)
+      );
     }
 
     // 5. Recompute joint surface, get new distance
-    const jointState = surface.compute(walkerA.boundary, walkerB.boundary, walkerA.eta, walkerB.eta);
+    const jointState = surface.compute(
+      walkerA.boundary,
+      walkerB.boundary,
+      walkerA.eta,
+      walkerB.eta
+    );
     const newDistance = jointState.distance;
 
     // 6. Update Skyrms walker (c0 update)
-    const skyrmsPayoffValue = skyrms.prevDistance === Infinity ? 0 : skyrms.prevDistance - newDistance;
+    const skyrmsPayoffValue =
+      skyrms.prevDistance === Infinity ? 0 : skyrms.prevDistance - newDistance;
     skyrmsC0Update(skyrms, proposalFlat, newDistance, proposalAccepted);
 
     // 7. All three walkers: c1 measure, c3 adapt
@@ -489,7 +529,7 @@ export function mediateThreeWalker(config: ThreeWalkerConfig): ThreeWalkerResult
     walkerA.eta,
     walkerB.eta,
     config.numChoicesA,
-    config.numChoicesB,
+    config.numChoicesB
   );
 
   return {
@@ -507,7 +547,11 @@ export function mediateThreeWalker(config: ThreeWalkerConfig): ThreeWalkerResult
 // Helpers
 // ============================================================================
 
-function sampleFromDist(dist: number[], exploration: number, rng: () => number): number {
+function sampleFromDist(
+  dist: number[],
+  exploration: number,
+  rng: () => number
+): number {
   if (rng() < exploration) return Math.floor(rng() * dist.length);
   const r = rng();
   let cum = 0;

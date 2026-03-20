@@ -52,7 +52,7 @@ export class JointVoidSurface {
     boundaryA: VoidBoundary,
     boundaryB: VoidBoundary,
     etaA: number,
-    etaB: number,
+    etaB: number
   ): JointState {
     const distA = complementDistribution(boundaryA, etaA);
     const distB = complementDistribution(boundaryB, etaB);

@@ -4,7 +4,10 @@ import {
   VoidCrossAttentionHead,
   VoidTransformerBlock,
 } from './void-transformer';
-import { createVoidBoundary, updateVoidBoundary } from '../../gnosis/src/runtime/void-walker.js';
+import {
+  createVoidBoundary,
+  updateVoidBoundary,
+} from '../../gnosis/src/runtime/void-walker.js';
 
 function seededRng(seed: number): () => number {
   let s = seed;
@@ -87,9 +90,11 @@ describe('VoidAttentionHead', () => {
       neighborhoodRadius: 1,
       decayRate: 0,
     });
-    head.reject(2, 5);  // Reject choice 2 with magnitude 5
+    head.reject(2, 5); // Reject choice 2 with magnitude 5
     // Choice 2 should have highest void, neighbors should also have some
-    expect(head.boundary.counts[2]).toBeGreaterThanOrEqual(head.boundary.counts[1]);
+    expect(head.boundary.counts[2]).toBeGreaterThanOrEqual(
+      head.boundary.counts[1]
+    );
     expect(head.boundary.counts[1]).toBeGreaterThan(head.boundary.counts[0]);
     expect(head.boundary.counts[3]).toBeGreaterThan(head.boundary.counts[4]);
   });
@@ -157,7 +162,10 @@ describe('VoidCrossAttentionHead', () => {
     const bA = createVoidBoundary(2);
     const bB = createVoidBoundary(2);
     // A rejects 0, B rejects 1 → cross should favor [1, 0]
-    for (let i = 0; i < 10; i++) { updateVoidBoundary(bA, 0); updateVoidBoundary(bB, 1); }
+    for (let i = 0; i < 10; i++) {
+      updateVoidBoundary(bA, 0);
+      updateVoidBoundary(bB, 1);
+    }
     const out = head.crossAttend(bA, bB, 3.0, 3.0);
     const weight_1_0 = out.weights[1 * 2 + 0]; // [1, 0]
     const weight_0_1 = out.weights[0 * 2 + 1]; // [0, 1]
@@ -319,17 +327,22 @@ describe('VoidTransformerBlock', () => {
 // ============================================================================
 
 describe('Benchmark: Void Transformer', () => {
-  const games: [string, (a: number, b: number) => [number, number], number][] = [
-    ['Hawk-Dove (2x2)', hawkDovePayoff, 2],
-    ['PD (2x2)', prisonerPayoff, 2],
-    ['Coordination (3x3)', coordinationPayoff3, 3],
-    ['Chester-Maxell (5x5)', chesterMaxellSmall, 5],
-  ];
+  const games: [string, (a: number, b: number) => [number, number], number][] =
+    [
+      ['Hawk-Dove (2x2)', hawkDovePayoff, 2],
+      ['PD (2x2)', prisonerPayoff, 2],
+      ['Coordination (3x3)', coordinationPayoff3, 3],
+      ['Chester-Maxell (5x5)', chesterMaxellSmall, 5],
+    ];
 
   for (const [name, payoff, n] of games) {
     test(`${name}: 500 rounds, 5 seeds`, () => {
       const seeds = [42, 123, 456, 789, 1337];
-      const results: { coordRate: number; avgEntropy: number; finalGait: string }[] = [];
+      const results: {
+        coordRate: number;
+        avgEntropy: number;
+        finalGait: string;
+      }[] = [];
 
       for (const seed of seeds) {
         const block = new VoidTransformerBlock({
@@ -358,8 +371,10 @@ describe('Benchmark: Void Transformer', () => {
         });
       }
 
-      const avgCoord = results.reduce((s, r) => s + r.coordRate, 0) / results.length;
-      const avgEntropy = results.reduce((s, r) => s + r.avgEntropy, 0) / results.length;
+      const avgCoord =
+        results.reduce((s, r) => s + r.coordRate, 0) / results.length;
+      const avgEntropy =
+        results.reduce((s, r) => s + r.avgEntropy, 0) / results.length;
       const gaits = results.map((r) => r.finalGait);
 
       console.log(`\n=== Void Transformer: ${name} ===`);

@@ -26,8 +26,17 @@ import { mediateThreeWalker, type ThreeWalkerResult } from '../skyrms-walker';
 // ============================================================================
 
 export const OFFER_LABELS = [
-  '$100K', '$110K', '$120K', '$130K', '$140K',
-  '$150K', '$160K', '$170K', '$180K', '$190K', '$200K',
+  '$100K',
+  '$110K',
+  '$120K',
+  '$130K',
+  '$140K',
+  '$150K',
+  '$160K',
+  '$170K',
+  '$180K',
+  '$190K',
+  '$200K',
 ] as const;
 
 export const NUM_CHOICES = OFFER_LABELS.length;
@@ -55,7 +64,7 @@ export function offerToAmount(idx: number): number {
  */
 export function chesterVMaxellPayoff(
   maxellOffer: number,
-  chesterOffer: number,
+  chesterOffer: number
 ): [number, number] {
   const maxellAmount = offerToAmount(maxellOffer);
   const chesterAmount = offerToAmount(chesterOffer);
@@ -66,7 +75,8 @@ export function chesterVMaxellPayoff(
     const maxellNet = (settlementAmount - 95_000) / 1000;
     const chesterSavings = (200_000 - settlementAmount) / 1000;
     // Health security bonus: Chester feels safe if savings cover remediation ($20K+)
-    const healthBonus = chesterSavings >= 20 ? 15 : chesterSavings >= 10 ? 5 : 0;
+    const healthBonus =
+      chesterSavings >= 20 ? 15 : chesterSavings >= 10 ? 5 : 0;
     // Quick settlement bonus for Maxell (avoids trial costs)
     const trialAvoidance = 5;
     return [maxellNet + trialAvoidance, chesterSavings + healthBonus];
@@ -74,9 +84,9 @@ export function chesterVMaxellPayoff(
     // No deal: escalation costs
     const gap = (maxellAmount - chesterAmount) / 1000;
     // Maxell: legal fees risk, reputation damage
-    const maxellCost = -gap * 0.4 - 2;  // base frustration
+    const maxellCost = -gap * 0.4 - 2; // base frustration
     // Chester: emotional distress, living uncertainty, mold anxiety
-    const chesterCost = -gap * 0.5 - 3;  // health anxiety premium
+    const chesterCost = -gap * 0.5 - 3; // health anxiety premium
     return [maxellCost, chesterCost];
   }
 }
@@ -106,7 +116,7 @@ export interface NeutralMediationResult extends ThreeWalkerResult {
 export function runChesterVMaxellNeutral(
   maxRounds: number = 500,
   nadirThreshold: number = 0.15,
-  rng: () => number = Math.random,
+  rng: () => number = Math.random
 ): NeutralMediationResult {
   const result = mediateThreeWalker({
     numChoicesA: NUM_CHOICES,
@@ -124,16 +134,20 @@ export function runChesterVMaxellNeutral(
   if (result.settled && result.convergenceRound !== null) {
     const lastRound = result.rounds[result.rounds.length - 1];
     // Midpoint of the final offers
-    const midpoint = (offerToAmount(lastRound.offerA) + offerToAmount(lastRound.offerB)) / 2;
+    const midpoint =
+      (offerToAmount(lastRound.offerA) + offerToAmount(lastRound.offerB)) / 2;
     settlementAmount = midpoint;
     settlementLabel = `$${(midpoint / 1000).toFixed(0)}K`;
   }
 
   // Summary stats
   const totalRounds = result.rounds.length;
-  const avgMaxellPayoff = result.rounds.reduce((s, r) => s + r.payoffA, 0) / totalRounds;
-  const avgChesterPayoff = result.rounds.reduce((s, r) => s + r.payoffB, 0) / totalRounds;
-  const avgSkyrmsPayoff = result.rounds.reduce((s, r) => s + r.skyrmsPayoff, 0) / totalRounds;
+  const avgMaxellPayoff =
+    result.rounds.reduce((s, r) => s + r.payoffA, 0) / totalRounds;
+  const avgChesterPayoff =
+    result.rounds.reduce((s, r) => s + r.payoffB, 0) / totalRounds;
+  const avgSkyrmsPayoff =
+    result.rounds.reduce((s, r) => s + r.skyrmsPayoff, 0) / totalRounds;
   const accepted = result.rounds.filter((r) => r.proposalAccepted).length;
 
   return {

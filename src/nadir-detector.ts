@@ -44,7 +44,7 @@ export class SkyrmsNadirDetector {
   constructor(
     distanceThreshold: number = 0.1,
     windowSize: number = 5,
-    kurtosisEpsilon: number = 0.05,
+    kurtosisEpsilon: number = 0.05
   ) {
     this.distanceThreshold = distanceThreshold;
     this.windowSize = windowSize;
@@ -67,14 +67,17 @@ export class SkyrmsNadirDetector {
 
     // Check distance stability
     const recentDist = this.distanceHistory.slice(-this.windowSize);
-    const allBelowThreshold = recentDist.every((d) => d <= this.distanceThreshold);
+    const allBelowThreshold = recentDist.every(
+      (d) => d <= this.distanceThreshold
+    );
     if (!allBelowThreshold) return null;
 
     // Check kurtosis stability
     const recentKurt = this.kurtosisHistory.slice(-this.windowSize);
     const kurtMean = recentKurt.reduce((a, b) => a + b, 0) / recentKurt.length;
     const kurtVar =
-      recentKurt.reduce((s, k) => s + (k - kurtMean) ** 2, 0) / recentKurt.length;
+      recentKurt.reduce((s, k) => s + (k - kurtMean) ** 2, 0) /
+      recentKurt.length;
     if (kurtVar > this.kurtosisEpsilon) return null;
 
     // Check mutual information is positive
@@ -83,8 +86,7 @@ export class SkyrmsNadirDetector {
     if (!allPositiveMI) return null;
 
     // Convergence certified
-    const avgIB =
-      recentDist.reduce((a, b) => a + b, 0) / recentDist.length;
+    const avgIB = recentDist.reduce((a, b) => a + b, 0) / recentDist.length;
 
     return {
       round: this.roundCount,

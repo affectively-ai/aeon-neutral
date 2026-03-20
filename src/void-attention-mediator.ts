@@ -60,7 +60,7 @@ export interface AttentionMediatorResult {
  *   self-attend → cross-attend → decide → interact → residual → norm → adapt
  */
 export async function mediateWithVoidAttention(
-  config: AttentionMediatorConfig,
+  config: AttentionMediatorConfig
 ): Promise<AttentionMediatorResult> {
   const rng = config.rng ?? Math.random;
   const threshold = config.nadirThreshold ?? 0.15;
@@ -72,7 +72,7 @@ export async function mediateWithVoidAttention(
     config.payoff,
     rng,
     config.neighborhoodRadius ?? 1,
-    config.decayRate ?? 0,
+    config.decayRate ?? 0
   );
 
   const rounds: AttentionMediatorRound[] = [];

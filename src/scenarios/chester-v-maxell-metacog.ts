@@ -125,9 +125,12 @@ export const CHESTER_PERSONALITY: PersonalityLayerConfig[] = [
     timescale: 'generational',
     dimensions: 6,
     labels: [
-      'collectivismIndividualism', 'emotionalExpressiveness',
-      'hierarchyEgalitarianism', 'uncertaintyTolerance',
-      'generationalTrauma', 'generationalResilience',
+      'collectivismIndividualism',
+      'emotionalExpressiveness',
+      'hierarchyEgalitarianism',
+      'uncertaintyTolerance',
+      'generationalTrauma',
+      'generationalResilience',
     ],
     // Low uncertainty tolerance (wants resolution), some generational housing trauma
     initialCounts: [0, 0.5, 0, 2, 1, 0],
@@ -202,9 +205,12 @@ export const MAXELL_PERSONALITY: PersonalityLayerConfig[] = [
     timescale: 'generational',
     dimensions: 6,
     labels: [
-      'collectivismIndividualism', 'emotionalExpressiveness',
-      'hierarchyEgalitarianism', 'uncertaintyTolerance',
-      'generationalTrauma', 'generationalResilience',
+      'collectivismIndividualism',
+      'emotionalExpressiveness',
+      'hierarchyEgalitarianism',
+      'uncertaintyTolerance',
+      'generationalTrauma',
+      'generationalResilience',
     ],
     // Professional: moderate hierarchy acceptance, higher uncertainty tolerance
     initialCounts: [0, 1, 0, 0.5, 0, 0.5],
@@ -284,28 +290,34 @@ export interface MetacogMediationResult {
 export function runChesterVMaxellMetacog(
   maxRounds: number = 500,
   windowSize: number = 5,
-  rng: () => number = Math.random,
+  rng: () => number = Math.random
 ): MetacogMediationResult {
   // Create agents with personality stacks
-  const maxell = createVoidAgent({
-    name: 'Maxell',
-    actionDimensions: NUM_CHOICES,
-    numHeads: 2,
-    eta: 2.0,
-    neighborhoodRadius: 1,
-    decayRate: 0.01,
-    personalityLayers: MAXELL_PERSONALITY,
-  }, rng);
+  const maxell = createVoidAgent(
+    {
+      name: 'Maxell',
+      actionDimensions: NUM_CHOICES,
+      numHeads: 2,
+      eta: 2.0,
+      neighborhoodRadius: 1,
+      decayRate: 0.01,
+      personalityLayers: MAXELL_PERSONALITY,
+    },
+    rng
+  );
 
-  const chester = createVoidAgent({
-    name: 'Chester',
-    actionDimensions: NUM_CHOICES,
-    numHeads: 2,
-    eta: 2.0,
-    neighborhoodRadius: 1,
-    decayRate: 0.01,
-    personalityLayers: CHESTER_PERSONALITY,
-  }, rng);
+  const chester = createVoidAgent(
+    {
+      name: 'Chester',
+      actionDimensions: NUM_CHOICES,
+      numHeads: 2,
+      eta: 2.0,
+      neighborhoodRadius: 1,
+      decayRate: 0.01,
+      personalityLayers: CHESTER_PERSONALITY,
+    },
+    rng
+  );
 
   // Bond: they can perceive each other's complement distributions
   bond(maxell, chester);
@@ -324,25 +336,47 @@ export function runChesterVMaxellMetacog(
     const chesterOffer = chesterTick.action;
 
     // Evaluate payoffs
-    const [payoffMaxell, payoffChester] = chesterVMaxellPayoff(maxellOffer, chesterOffer);
-    const dealPossible = offerToAmount(maxellOffer) <= offerToAmount(chesterOffer);
+    const [payoffMaxell, payoffChester] = chesterVMaxellPayoff(
+      maxellOffer,
+      chesterOffer
+    );
+    const dealPossible =
+      offerToAmount(maxellOffer) <= offerToAmount(chesterOffer);
 
     // Observe outcomes
     // Maxell: rejected if payoff is negative or worse than Chester's
     const maxellRejected = payoffMaxell < 0 || payoffMaxell < payoffChester;
     const maxellMag = maxellRejected
-      ? (payoffMaxell < 0 ? Math.abs(payoffMaxell) : payoffChester - payoffMaxell)
+      ? payoffMaxell < 0
+        ? Math.abs(payoffMaxell)
+        : payoffChester - payoffMaxell
       : 0;
 
     // Chester: rejected if payoff is negative or worse than Maxell's
     const chesterRejected = payoffChester < 0 || payoffChester < payoffMaxell;
     const chesterMag = chesterRejected
-      ? (payoffChester < 0 ? Math.abs(payoffChester) : payoffMaxell - payoffChester)
+      ? payoffChester < 0
+        ? Math.abs(payoffChester)
+        : payoffMaxell - payoffChester
       : 0;
 
     // Complete ticks with environment feedback
-    completeTick(maxell, maxellOffer, maxellTick.perception, maxellRejected, maxellMag, payoffMaxell);
-    completeTick(chester, chesterOffer, chesterTick.perception, chesterRejected, chesterMag, payoffChester);
+    completeTick(
+      maxell,
+      maxellOffer,
+      maxellTick.perception,
+      maxellRejected,
+      maxellMag,
+      payoffMaxell
+    );
+    completeTick(
+      chester,
+      chesterOffer,
+      chesterTick.perception,
+      chesterRejected,
+      chesterMag,
+      payoffChester
+    );
 
     // Cross-pollination: each learns from the other's choice
     if (maxellOffer !== chesterOffer) {
@@ -389,14 +423,25 @@ export function runChesterVMaxellMetacog(
   let settlementLabel: string | null = null;
   if (settled) {
     const last = rounds[rounds.length - 1];
-    const midpoint = (offerToAmount(last.maxellOffer) + offerToAmount(last.chesterOffer)) / 2;
+    const midpoint =
+      (offerToAmount(last.maxellOffer) + offerToAmount(last.chesterOffer)) / 2;
     settlementAmount = midpoint;
     settlementLabel = `$${(midpoint / 1000).toFixed(0)}K`;
   }
 
   // Gait distribution
-  const maxellGaitDist: Record<Gait, number> = { stand: 0, trot: 0, canter: 0, gallop: 0 };
-  const chesterGaitDist: Record<Gait, number> = { stand: 0, trot: 0, canter: 0, gallop: 0 };
+  const maxellGaitDist: Record<Gait, number> = {
+    stand: 0,
+    trot: 0,
+    canter: 0,
+    gallop: 0,
+  };
+  const chesterGaitDist: Record<Gait, number> = {
+    stand: 0,
+    trot: 0,
+    canter: 0,
+    gallop: 0,
+  };
   for (const r of rounds) {
     maxellGaitDist[r.maxellGait]++;
     chesterGaitDist[r.chesterGait]++;
@@ -420,8 +465,10 @@ export function runChesterVMaxellMetacog(
     summary: {
       totalRounds,
       settled,
-      avgMaxellPayoff: rounds.reduce((s, r) => s + r.payoffMaxell, 0) / totalRounds,
-      avgChesterPayoff: rounds.reduce((s, r) => s + r.payoffChester, 0) / totalRounds,
+      avgMaxellPayoff:
+        rounds.reduce((s, r) => s + r.payoffMaxell, 0) / totalRounds,
+      avgChesterPayoff:
+        rounds.reduce((s, r) => s + r.payoffChester, 0) / totalRounds,
       dealRate: dealRounds / totalRounds,
       maxellGaitHistory: rounds.map((r) => r.maxellGait),
       chesterGaitHistory: rounds.map((r) => r.chesterGait),
