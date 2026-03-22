@@ -57,11 +57,16 @@ export class JointVoidSurface {
     const distA = complementDistribution(boundaryA, etaA);
     const distB = complementDistribution(boundaryB, etaB);
 
-    // Outer product: joint[i * B + j] = distA[i] * distB[j]
-    const surface: number[] = new Array(this.numChoicesA * this.numChoicesB);
+    // Cannon rotation: outer product -- each cell (i,j) is independent.
+    // Under gnode --strategy cannon, rows distribute across lanes.
+    // For 11x11 choice space: 121 independent multiplications.
+    const nB = this.numChoicesB;
+    const surface: number[] = new Array(this.numChoicesA * nB);
     for (let i = 0; i < this.numChoicesA; i++) {
-      for (let j = 0; j < this.numChoicesB; j++) {
-        surface[i * this.numChoicesB + j] = distA[i] * distB[j];
+      const dA = distA[i];
+      const rowBase = i * nB;
+      for (let j = 0; j < nB; j++) {
+        surface[rowBase + j] = dA * distB[j];
       }
     }
 

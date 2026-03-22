@@ -478,7 +478,10 @@ export class VoidTransformerBlock {
     this.roundCount++;
     const cadence = this.config.ffnCadence ?? 5;
 
-    // 1. Multi-head self-attention
+    // Cannon rotation: multi-head self-attention. Each head is
+    // independent (different boundary, different eta). Under gnode
+    // --strategy cannon, heads distribute across lanes.
+    // FORK: all heads attend in parallel
     const selfA = this.headsA.map((h) => h.attend(rng));
     const selfB = this.headsB.map((h) => h.attend(rng));
 
@@ -557,7 +560,8 @@ export class VoidTransformerBlock {
       this.momentumS++;
     }
 
-    // 5. Layer norm (void decay)
+    // Cannon rotation: layer norm -- all heads decay independently.
+    // FORK: decay all heads in parallel (A, B, cross are independent)
     for (const head of this.headsA) head.layerNorm();
     for (const head of this.headsB) head.layerNorm();
     this.crossHead.layerNorm();
